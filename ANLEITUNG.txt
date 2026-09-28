@@ -1,0 +1,38 @@
+CHOR100 - Eine Stimme rein, ein Chor raus (VST3, Windows)
+==========================================================
+
+WEG A: Selbst bauen (einmalig ca. 30-45 Min, meist Downloadzeit)
+1. Visual Studio Community installieren (kostenlos):
+   https://visualstudio.microsoft.com/de/downloads/
+   Im Installer den Haken bei "Desktopentwicklung mit C++" setzen. Mehr braucht es nicht
+   (CMake und Ninja sind da mit drin).
+2. Diesen Ordner irgendwo entpacken, z.B. nach C:\Chor100 (Pfad ohne Umlaute).
+3. Doppelklick auf build_windows.bat. Beim ersten Mal laedt es JUCE herunter und
+   kompiliert ein paar Minuten. Am Ende oeffnet sich der Ordner mit Chor100.vst3.
+4. Chor100.vst3 nach  C:\Program Files\Common Files\VST3  kopieren.
+
+WEG B: Ohne Installation, ueber GitHub (kostenlos)
+1. Neues Repository auf github.com anlegen und den Inhalt dieses Ordners hochladen
+   (inkl. dem versteckten Ordner .github).
+2. Reiter "Actions" oeffnen, der Build startet automatisch (ca. 10 Min).
+3. Im fertigen Lauf unten unter "Artifacts" Chor100-VST3-Windows herunterladen,
+   entpacken und wie oben nach  C:\Program Files\Common Files\VST3  kopieren.
+
+IN FL STUDIO
+Options > Manage plugins > "Find installed plugins". Dann Chor100 in den Mixer-Slot
+der Vocal-Spur laden. Beste Ergebnisse mit einer trockenen Solo-Stimme ohne Hall.
+
+REGLER
+Stimmen      1-100 Saenger
+Verstimmung  wie unsauber der Chor intoniert (10-20 ct klingt natuerlich)
+Timing       wie ungleich die Saenger einsetzen
+Vibrato      Staerke des individuellen Vibratos
+Klangfarbe   wie verschieden die Stimmen klingen (klein = Klone, gross = gemischter Chor)
+Tonlage      alle Stimmen dunkler (maennlicher) oder heller (weiblicher)
+Breite       Stereo-Breite
+Raum         Hall
+Mix          Anteil Chor vs. Originalstimme
+Ausgang      Lautstaerke
+
+Hinweis: Das Plugin hat ca. 30 ms Latenz, FL Studio gleicht das automatisch aus.
+Zum Testen gibt es zusaetzlich eine Standalone-Version (Ziel Chor100_Standalone).
