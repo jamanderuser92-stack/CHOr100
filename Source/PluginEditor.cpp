@@ -1,62 +1,78 @@
 #include "PluginEditor.h"
 
-namespace
+static juce::Font paintFont (float size) { return juce::Font (juce::FontOptions ("Segoe UI", size, juce::Font::plain)); }
+
+void PaintLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h, float pos,
+                                         float start, float end, juce::Slider&)
 {
-    const juce::Colour bg (0xff15171c), panel (0xff1e2129), accent (0xffe8b04a), text (0xffe6e6e6);
-    const char* ids[]    = { "voices", "detune", "timing", "vibrato", "spread", "tone", "width", "room", "mix", "out" };
-    const char* names[]  = { "Stimmen", "Verstimmung", "Timing", "Vibrato", "Klangfarbe", "Tonlage", "Breite", "Raum", "Mix", "Ausgang" };
+    const auto b = juce::Rectangle<float> ((float) x, (float) y, (float) w, (float) h);
+    const float r = juce::jmin (b.getWidth(), b.getHeight()) * 0.5f - 3.0f;
+    const auto c = b.getCentre();
+    const float a = start + pos * (end - start);
+
+    g.setColour (juce::Colours::white);
+    g.fillEllipse (c.x - r, c.y - r, r * 2, r * 2);
+    g.setColour (juce::Colours::black);
+    g.drawEllipse (c.x - r, c.y - r, r * 2, r * 2, 4.0f);
+    g.drawLine (c.x, c.y, c.x + (r - 6) * std::sin (a), c.y - (r - 6) * std::cos (a), 4.0f);
 }
 
-Chor100Editor::Chor100Editor (Chor100Processor& p) : AudioProcessorEditor (&p)
+void PaintLookAndFeel::drawBubble (juce::Graphics& g, juce::BubbleComponent&, const juce::Point<float>&,
+                                   const juce::Rectangle<float>& body)
 {
-    lnf.setColour (juce::Slider::rotarySliderFillColourId, accent);
-    lnf.setColour (juce::Slider::rotarySliderOutlineColourId, juce::Colour (0xff3a3f4b));
-    lnf.setColour (juce::Slider::thumbColourId, accent);
-    lnf.setColour (juce::Slider::textBoxTextColourId, text);
-    lnf.setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
-    lnf.setColour (juce::Label::textColourId, text);
-    setLookAndFeel (&lnf);
+    g.setColour (juce::Colours::white);
+    g.fillRect (body);
+    g.setColour (juce::Colours::black);
+    g.drawRect (body, 2.0f);
+}
 
-    for (size_t i = 0; i < knobs.size(); ++i)
+juce::Font PaintLookAndFeel::getSliderPopupFont (juce::Slider&) { return paintFont (13.0f); }
+
+// Koordinaten direkt aus der Skizze uebernommen
+SuperDirtEditor::SuperDirtEditor (SuperDirtProcessor& p) : AudioProcessorEditor (&p)
+{
+    for (auto* s : { &dirt, &super, &output })
     {
-        auto& k = knobs[i];
-        k.slider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-        k.slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 80, 18);
-        addAndMakeVisible (k.slider);
-        k.label.setText (names[i], juce::dontSendNotification);
-        k.label.setJustificationType (juce::Justification::centred);
-        k.label.setFont (juce::FontOptions (14.0f, juce::Font::bold));
-        addAndMakeVisible (k.label);
-        k.attachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (p.apvts, ids[i], k.slider);
+        s->setLookAndFeel (&lnf);
+        s->setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+        s->setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+        s->setRotaryParameters (juce::MathConstants<float>::pi * 1.25f, juce::MathConstants<float>::pi * 2.75f, true);
+        s->setPopupDisplayEnabled (true, true, this);
+        s->setColour (juce::Slider::textBoxTextColourId, juce::Colours::black);
+        addAndMakeVisible (s);
     }
-    setSize (620, 360);
+    aDirt  = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (p.apvts, "dirt", dirt);
+    aSuper = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (p.apvts, "super", super);
+    aOut   = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (p.apvts, "out", output);
+    output.setDoubleClickReturnValue (true, 0.0);
+    setSize (760, 340);
 }
 
-Chor100Editor::~Chor100Editor() { setLookAndFeel (nullptr); }
-
-void Chor100Editor::paint (juce::Graphics& g)
+SuperDirtEditor::~SuperDirtEditor()
 {
-    g.fillAll (bg);
-    g.setColour (panel);
-    g.fillRoundedRectangle (getLocalBounds().reduced (10).withTrimmedTop (50).toFloat(), 10.0f);
-    g.setColour (accent);
-    g.setFont (juce::FontOptions (26.0f, juce::Font::bold));
-    g.drawText ("CHOR100", 20, 12, 200, 32, juce::Justification::centredLeft);
-    g.setColour (text.withAlpha (0.6f));
-    g.setFont (juce::FontOptions (13.0f));
-    g.drawText ("Eine Stimme rein, ein Chor raus", 200, 12, 400, 32, juce::Justification::centredRight);
+    for (auto* s : { &dirt, &super, &output }) s->setLookAndFeel (nullptr);
 }
 
-void Chor100Editor::resized()
+void SuperDirtEditor::paint (juce::Graphics& g)
 {
-    auto area = getLocalBounds().reduced (20).withTrimmedTop (50);
-    const int rowH = area.getHeight() / 2;
-    const int colW = area.getWidth() / 5;
-    for (size_t i = 0; i < knobs.size(); ++i)
+    g.fillAll (juce::Colours::white);
+    g.setColour (juce::Colours::black);
+    g.drawRect (juce::Rectangle<float> (30.0f, 30.0f, 693.0f, 280.0f), 4.0f);
+
+    g.setFont (paintFont (13.0f));
+    g.drawSingleLineText ("salux super dirt", 47, 56);
+    g.drawSingleLineText ("DIRT", 113, 204);
+    g.drawSingleLineText ("SUPER", 210, 212);
+    g.drawSingleLineText ("OUPTUTO", 390, 168);
+}
+
+void SuperDirtEditor::resized()
+{
+    auto knob = [] (juce::Slider& s, int cx, int cy, int r)
     {
-        const int row = (int) i / 5, col = (int) i % 5;
-        auto cell = juce::Rectangle<int> (area.getX() + col * colW, area.getY() + row * rowH, colW, rowH).reduced (4);
-        knobs[i].label.setBounds (cell.removeFromTop (20));
-        knobs[i].slider.setBounds (cell);
-    }
+        s.setBounds (cx - r - 3, cy - r - 3, (r + 3) * 2, (r + 3) * 2);
+    };
+    knob (dirt, 105, 246, 35);
+    knob (super, 216, 248, 37);
+    knob (output, 435, 238, 43);
 }
