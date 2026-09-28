@@ -1,23 +1,29 @@
 #pragma once
 #include "PluginProcessor.h"
 
-class Chor100Editor : public juce::AudioProcessorEditor
+// Look wie in MS Paint gemalt: weiss, schwarze dicke Linien, Standardschrift
+class PaintLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
-    explicit Chor100Editor (Chor100Processor&);
-    ~Chor100Editor() override;
+    void drawRotarySlider (juce::Graphics&, int x, int y, int w, int h, float pos,
+                           float startAngle, float endAngle, juce::Slider&) override;
+    void drawBubble (juce::Graphics&, juce::BubbleComponent&, const juce::Point<float>&,
+                     const juce::Rectangle<float>& body) override;
+    juce::Font getSliderPopupFont (juce::Slider&) override;
+};
+
+class SuperDirtEditor : public juce::AudioProcessorEditor
+{
+public:
+    explicit SuperDirtEditor (SuperDirtProcessor&);
+    ~SuperDirtEditor() override;
     void paint (juce::Graphics&) override;
     void resized() override;
 
 private:
-    struct Knob
-    {
-        juce::Slider slider;
-        juce::Label label;
-        std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attachment;
-    };
-    std::array<Knob, 10> knobs;
-    juce::LookAndFeel_V4 lnf;
+    PaintLookAndFeel lnf;
+    juce::Slider dirt, super, output;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> aDirt, aSuper, aOut;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Chor100Editor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SuperDirtEditor)
 };
